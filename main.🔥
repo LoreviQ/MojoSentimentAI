@@ -7,6 +7,12 @@ fn loadDataset() raises -> PythonObject:
     df = df.drop(columns=['Unnamed: 0'])
     return df
 
+fn processText(text: String) raises -> String:
+    var processedText: String
+    processedText = text.lower()
+    return text
+
 fn main() raises:
     var df = loadDataset()
     print(df)
+    
