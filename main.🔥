@@ -1,0 +1,12 @@
+from python import Python
+
+# Load the dataset
+fn loadDataset() raises -> PythonObject:
+    var pd = Python.import_module("pandas")
+    var df = pd.read_csv('reviews_dataset.csv')
+    df = df.drop(columns=['Unnamed: 0'])
+    return df
+
+fn main() raises:
+    var df = loadDataset()
+    print(df)
