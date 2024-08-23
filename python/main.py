@@ -7,7 +7,6 @@ import argparse
 from classifiers import MyRandomForestClassifier
 from data import load_reviews_dataset, split_df
 from model_select import GridSearchCV
-from sklearn.ensemble import RandomForestClassifier
 from vectorizers import MyCountVectorizer, MyWord2Vectorizer
 
 
@@ -38,7 +37,7 @@ def main(test):
 
     grid_search = GridSearchCV(
         [MyCountVectorizer, MyWord2Vectorizer],
-        [MyRandomForestClassifier, RandomForestClassifier],
+        [MyRandomForestClassifier],
         parameters,
         n_jobs=-1,
     )
