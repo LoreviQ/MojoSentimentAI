@@ -11,7 +11,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import KFold
 
 
-class GridSearchCV:
+class MyGridSearchCV:
     """
     Custom implementation of the GridSearchCV class.
     """

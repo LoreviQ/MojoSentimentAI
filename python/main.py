@@ -6,7 +6,7 @@ import argparse
 
 from classifiers import MyRandomForestClassifier
 from data import load_reviews_dataset, split_df
-from model_select import GridSearchCV
+from model_select import MyGridSearchCV
 from vectorizers import MyCountVectorizer, MyWord2Vectorizer
 
 
@@ -55,7 +55,7 @@ def main(test):
     df = load_reviews_dataset()
     x_train, x_test, y_train, y_test = split_df(df)
 
-    grid_search = GridSearchCV(
+    grid_search = MyGridSearchCV(
         [(MyCountVectorizer, c_vec_params), (MyWord2Vectorizer, w2_vec_params)],
         [(MyRandomForestClassifier, model_params)],
         n_jobs=-1,
