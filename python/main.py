@@ -8,7 +8,7 @@ from classifiers import MyRandomForestClassifier
 from data import load_reviews_dataset, split_df
 from model_select import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
-from textVectorizers import MyCountVectorizer, MyWord2Vectorizer
+from vectorizers import MyCountVectorizer, MyWord2Vectorizer
 
 
 def main(test):
@@ -16,8 +16,15 @@ def main(test):
     Main function
     """
     if test:
-        df = load_reviews_dataset()
-        x_train, x_test, y_train, y_test = split_df(df)
+        parameters = {
+            "max_features": ["sqrt"],
+            "n_estimators": [500],
+            "max_depth": [5],
+            "min_samples_split": [5],
+            "min_samples_leaf": [1],
+            "bootstrap": [True],
+        }
+    else:
         parameters = {
             "max_features": ["sqrt", "log2"],
             "n_estimators": [500, 1000, 1500],
@@ -26,26 +33,18 @@ def main(test):
             "min_samples_leaf": [1, 2, 5, 10],
             "bootstrap": [True, False],
         }
-        parameters_quick = {
-            "max_features": ["sqrt"],
-            "n_estimators": [500],
-            "max_depth": [5],
-            "min_samples_split": [5],
-            "min_samples_leaf": [1],
-            "bootstrap": [True],
-        }
-        grid_search = GridSearchCV(
-            [MyCountVectorizer, MyWord2Vectorizer],
-            [MyRandomForestClassifier, RandomForestClassifier],
-            parameters,
-            n_jobs=-1,
-        )
-        grid_search.fit(x_train, y_train)
-        grid_search.log_best()
-        print(grid_search.score(x_test, y_test))
+    df = load_reviews_dataset()
+    x_train, x_test, y_train, y_test = split_df(df)
 
-    else:
-        df = load_reviews_dataset()
+    grid_search = GridSearchCV(
+        [MyCountVectorizer, MyWord2Vectorizer],
+        [MyRandomForestClassifier, RandomForestClassifier],
+        parameters,
+        n_jobs=-1,
+    )
+    grid_search.fit(x_train, y_train)
+    grid_search.log_best()
+    print(grid_search.score(x_test, y_test))
 
 
 if __name__ == "__main__":
