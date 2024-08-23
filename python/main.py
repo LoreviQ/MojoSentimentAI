@@ -4,6 +4,7 @@ Main module to load the dataset and train the model.
 
 import argparse
 
+from classifiers import CustomRandomForestClassifier
 from data import load_reviews_dataset
 from textVectorizers import CustomCountVectorizer, Word2Vectorizer
 from training import train_model, train_test_split
@@ -15,8 +16,12 @@ def main(test):
     """
     if test:
         df = load_reviews_dataset()
-        print(df)
-        x_train, x_test, y_train, y_test = train_test_split(df, Word2Vectorizer())
+        x_train, x_test, y_train, y_test = train_test_split(df, CustomCountVectorizer())
+        model = CustomRandomForestClassifier(
+            n_estimators=10, max_features="sqrt", max_depth=5
+        )
+        model.fit(x_train, y_train)
+        print("--- Score: " + str(model.score(x_test, y_test)) + " ---")
 
     else:
         df = load_reviews_dataset()

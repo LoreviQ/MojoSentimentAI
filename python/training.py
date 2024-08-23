@@ -21,9 +21,9 @@ def train_test_split(df, vectorizer, ratio=0.2):
     test = df.sample(frac=ratio)
     train = df.drop(test.index)
     x_train = vectorizer.fit_transform(train["text"])
-    y_train = train["label"]
+    y_train = train["label"].reset_index(drop=True)
     x_test = vectorizer.transform(test["text"])
-    y_test = test["label"]
+    y_test = test["label"].reset_index(drop=True)
     return x_train, x_test, y_train, y_test
 
 
