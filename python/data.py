@@ -16,7 +16,8 @@ nltk.download("wordnet")
 
 def process_text(text):
     """
-    Process the text data by removing special characters and converting it to lowercase.
+    Process the text data by tokenizing, converting to lowercase,
+    removing special characters, lemmatizing, and removing stopwords
 
     Args:
         text (str): The text data to process.
