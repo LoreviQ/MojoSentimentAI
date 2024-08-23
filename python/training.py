@@ -6,7 +6,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import GridSearchCV
 
 
-def train_test_split(df, cv, ratio=0.2):
+def train_test_split(df, vectorizer, ratio=0.2):
     """
     Split the dataset into training and testing sets.
     Converts the text data into a vector.
@@ -20,10 +20,10 @@ def train_test_split(df, cv, ratio=0.2):
     """
     test = df.sample(frac=ratio)
     train = df.drop(test.index)
-    x_test = cv.fit_transform(test["text"])
-    y_test = test["label"]
-    x_train = cv.transform(train["text"])
+    x_train = vectorizer.fit_transform(train["text"])
     y_train = train["label"]
+    x_test = vectorizer.transform(test["text"])
+    y_test = test["label"]
     return x_train, x_test, y_train, y_test
 
 
@@ -40,11 +40,11 @@ def train_model(x_train, y_train):
     """
     parameters = {
         "max_features": ["sqrt"],
-        "n_estimators": [1000, 1500],
-        "max_depth": [10, None],
-        "min_samples_split": [5],
-        "min_samples_leaf": [1, 2],
-        "bootstrap": [False],
+        "n_estimators": [500, 1000, 1500],
+        "max_depth": [5, 10, None],
+        "min_samples_split": [5, 10, 15],
+        "min_samples_leaf": [1, 2, 5, 10],
+        "bootstrap": [True, False],
     }
     grid_search = GridSearchCV(
         RandomForestClassifier(),

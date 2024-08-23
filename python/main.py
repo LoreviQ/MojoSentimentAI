@@ -5,7 +5,7 @@ Main module to load the dataset and train the model.
 import argparse
 
 from data import load_reviews_dataset
-from textVectorizers import CustomCountVectorizer
+from textVectorizers import CustomCountVectorizer, Word2Vectorizer
 from training import train_model, train_test_split
 
 
@@ -15,19 +15,17 @@ def main(test):
     """
     if test:
         df = load_reviews_dataset()
-        cv = CustomCountVectorizer(ngram_range=(1, 4))
-        cv.fit_transform(df["text"])
+        x_train, x_test, y_train, y_test = train_test_split(df, Word2Vectorizer())
+        print(x_train.shape)
 
     else:
         df = load_reviews_dataset()
-        print("--- CountVectorizer ngram_range=(1, 1) ---")
+        print("--- CountVectorizer ---")
         x_train, x_test, y_train, y_test = train_test_split(df, CustomCountVectorizer())
         model = train_model(x_train, y_train)
         print("--- Score: " + str(model.score(x_test, y_test)) + " ---")
-        print("--- CountVectorizer ngram_range=(1, 2) ---")
-        x_train, x_test, y_train, y_test = train_test_split(
-            df, CustomCountVectorizer(ngram_range=(1, 2))
-        )
+        print("--- Word2Vectorizer ---")
+        x_train, x_test, y_train, y_test = train_test_split(df, Word2Vectorizer())
         model = train_model(x_train, y_train)
         print("--- Score: " + str(model.score(x_test, y_test)) + " ---")
 

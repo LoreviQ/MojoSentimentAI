@@ -3,6 +3,7 @@ Contains the text vectorizers used in the project
 """
 
 import numpy as np
+from gensim.models import Word2Vec
 
 
 class CustomCountVectorizer:
@@ -61,5 +62,41 @@ class CustomCountVectorizer:
         """
         Fit and transform the text data into vectors.
         """
+        self.fit(documents)
+        return self.transform(documents)
+
+
+class Word2Vectorizer:
+    def __init__(self, vector_size=100, window=5, min_count=1, workers=4):
+        self.vector_size = vector_size
+        self.window = window
+        self.min_count = min_count
+        self.workers = workers
+        self.model = None
+
+    def fit(self, documents):
+        self.model = Word2Vec(
+            sentences=documents,
+            vector_size=self.vector_size,
+            window=self.window,
+            min_count=self.min_count,
+            workers=self.workers,
+        )
+
+    def transform(self, documents):
+        vectors = []
+        for document in documents:
+            vector = np.zeros(self.vector_size)
+            count = 0
+            for word in document.split():
+                if word in self.model.wv:
+                    vector += self.model.wv[word]
+                    count += 1
+            if count > 0:
+                vector /= count
+            vectors.append(vector)
+        return np.array(vectors)
+
+    def fit_transform(self, documents):
         self.fit(documents)
         return self.transform(documents)
