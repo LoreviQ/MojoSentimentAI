@@ -14,7 +14,7 @@ nltk.download("stopwords")
 nltk.download("wordnet")
 
 
-def process_text(text):
+def tokenize_text(text):
     """
     Process the text data by tokenizing, converting to lowercase,
     removing special characters, lemmatizing, and removing stopwords
@@ -23,19 +23,17 @@ def process_text(text):
         text (str): The text data to process.
 
     Returns:
-        str: The processed text data.
+        list: The processed tokens.
     """
     lm = WordNetLemmatizer()
 
-    text = text.lower()  # Convert to lowercase
-    text = "".join(
-        [char for char in text if char.isalnum() or char.isspace()]
-    )  # Remove special characters
-    words = text.split()  # Tokenize the text
-    text = " ".join(
-        [lm.lemmatize(word) for word in words if word not in stopwords.words("english")]
-    )  # Lemmatize the text and remove stopwords
-    return text
+    text = text.lower()
+    text = "".join([char for char in text if char.isalnum() or char.isspace()])
+    words = text.split()
+    tokens = [
+        lm.lemmatize(word) for word in words if word not in stopwords.words("english")
+    ]
+    return tokens
 
 
 def load_reviews_dataset():
@@ -49,5 +47,5 @@ def load_reviews_dataset():
     df = df.drop(columns=["Unnamed: 0"])
     df = df.rename(columns={"sentence": "text"})
     df = df.dropna()
-    df["text"] = df["text"].apply(process_text)
+    df["text"] = df["text"].apply(tokenize_text)
     return df

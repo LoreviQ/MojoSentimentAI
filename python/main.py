@@ -15,8 +15,8 @@ def main(test):
     """
     if test:
         df = load_reviews_dataset()
+        print(df)
         x_train, x_test, y_train, y_test = train_test_split(df, Word2Vectorizer())
-        print(x_train.shape)
 
     else:
         df = load_reviews_dataset()

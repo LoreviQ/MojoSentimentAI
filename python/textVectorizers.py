@@ -16,23 +16,22 @@ class CustomCountVectorizer:
         self.min_df = min_df
         self.ngram_range = ngram_range
 
-    def _generate_ngrams(self, document):
+    def _generate_ngrams(self, tokens):
         """
         Generate ngrams from the text data.
         """
-        words = document.split()
         ngrams = []
         for n in range(self.ngram_range[0], self.ngram_range[1] + 1):
-            for i in range(len(words) - n + 1):
-                ngrams.append(" ".join(words[i : i + n]))
+            for i in range(len(tokens) - n + 1):
+                ngrams.append(" ".join(tokens[i : i + n]))
         return ngrams
 
-    def fit(self, documents):
+    def fit(self, data):
         """
         Fit the vectorizer on the text data.
         """
-        for document in documents:
-            for ngram in self._generate_ngrams(document):
+        for tokens in data:
+            for ngram in self._generate_ngrams(tokens):
                 if ngram in self.vocabulary_:
                     self.vocabulary_[ngram] = self.vocabulary_[ngram] + 1
                 else:
@@ -45,25 +44,25 @@ class CustomCountVectorizer:
             for i, (ngram, frequency) in enumerate(self.vocabulary_.items())
         }
 
-    def transform(self, documents):
+    def transform(self, data):
         """
         Transform the text data into vectors.
         """
         vectors = []
-        for document in documents:
+        for tokens in data:
             vector = np.zeros(len(self.vocabulary_), dtype=int)
-            for ngram in document.split():
+            for ngram in self._generate_ngrams(tokens):
                 if ngram in self.vocabulary_:
                     vector[self.vocabulary_[ngram][0]] += 1
             vectors.append(vector)
         return np.array(vectors)
 
-    def fit_transform(self, documents):
+    def fit_transform(self, data):
         """
         Fit and transform the text data into vectors.
         """
-        self.fit(documents)
-        return self.transform(documents)
+        self.fit(data)
+        return self.transform(data)
 
 
 class Word2Vectorizer:
@@ -78,38 +77,38 @@ class Word2Vectorizer:
         self.workers = workers
         self.model = None
 
-    def fit(self, documents):
+    def fit(self, data):
         """
         Fit the Word2Vec model on the text data.
         """
         self.model = Word2Vec(
-            sentences=documents,
+            sentences=data,
             vector_size=self.vector_size,
             window=self.window,
             min_count=self.min_count,
             workers=self.workers,
         )
 
-    def transform(self, documents):
+    def transform(self, data):
         """
         Transform the text data into vectors.
         """
         vectors = []
-        for document in documents:
+        for tokens in data:
             vector = np.zeros(self.vector_size)
             count = 0
-            for word in document.split():
-                if word in self.model.wv:
-                    vector += self.model.wv[word]
+            for token in tokens:
+                if token in self.model.wv:
+                    vector += self.model.wv[token]
                     count += 1
             if count > 0:
                 vector /= count
             vectors.append(vector)
         return np.array(vectors)
 
-    def fit_transform(self, documents):
+    def fit_transform(self, data):
         """
         Fit and transform the text data into vectors.
         """
-        self.fit(documents)
-        return self.transform(documents)
+        self.fit(data)
+        return self.transform(data)
