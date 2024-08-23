@@ -49,3 +49,24 @@ def load_reviews_dataset():
     df = df.dropna()
     df["text"] = df["text"].apply(tokenize_text)
     return df
+
+
+def split_df(df, ratio=0.2):
+    """
+    Split the dataset into training and testing sets.
+    Converts the text data into a vector.
+
+    Args:
+        df (pd.DataFrame): The dataset to split.
+        ratio (float): The ratio of the testing set.
+
+    Returns:
+        tuple: The training and testing sets.
+    """
+    test = df.sample(frac=ratio)
+    train = df.drop(test.index)
+    x_train = train["text"].reset_index(drop=True)
+    y_train = train["label"].reset_index(drop=True)
+    x_test = test["text"].reset_index(drop=True)
+    y_test = test["label"].reset_index(drop=True)
+    return x_train, x_test, y_train, y_test

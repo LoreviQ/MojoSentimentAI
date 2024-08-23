@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.tree import DecisionTreeClassifier
 
 
-class CustomRandomForestClassifier:
+class MyRandomForestClassifier:
     def __init__(
         self,
         n_estimators=100,
@@ -23,6 +23,8 @@ class CustomRandomForestClassifier:
         self.trees = []
 
     def _bootstrap_sample(self, x, y):
+        y = y.reset_index(drop=True)
+
         n_samples = x.shape[0]
         indices = np.random.choice(n_samples, n_samples, replace=True)
         return x[indices], y[indices]

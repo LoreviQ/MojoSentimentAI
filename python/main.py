@@ -4,10 +4,11 @@ Main module to load the dataset and train the model.
 
 import argparse
 
-from classifiers import CustomRandomForestClassifier
-from data import load_reviews_dataset
-from textVectorizers import CustomCountVectorizer, Word2Vectorizer
-from training import train_model, train_test_split
+from classifiers import MyRandomForestClassifier
+from data import load_reviews_dataset, split_df
+from model_select import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from textVectorizers import MyCountVectorizer, MyWord2Vectorizer
 
 
 def main(test):
@@ -16,23 +17,35 @@ def main(test):
     """
     if test:
         df = load_reviews_dataset()
-        x_train, x_test, y_train, y_test = train_test_split(df, CustomCountVectorizer())
-        model = CustomRandomForestClassifier(
-            n_estimators=10, max_features="sqrt", max_depth=5
+        x_train, x_test, y_train, y_test = split_df(df)
+        parameters = {
+            "max_features": ["sqrt", "log2"],
+            "n_estimators": [500, 1000, 1500],
+            "max_depth": [5, 10, None],
+            "min_samples_split": [5, 10, 15],
+            "min_samples_leaf": [1, 2, 5, 10],
+            "bootstrap": [True, False],
+        }
+        parameters_quick = {
+            "max_features": ["sqrt"],
+            "n_estimators": [500],
+            "max_depth": [5],
+            "min_samples_split": [5],
+            "min_samples_leaf": [1],
+            "bootstrap": [True],
+        }
+        grid_search = GridSearchCV(
+            [MyCountVectorizer, MyWord2Vectorizer],
+            [MyRandomForestClassifier, RandomForestClassifier],
+            parameters,
+            n_jobs=-1,
         )
-        model.fit(x_train, y_train)
-        print("--- Score: " + str(model.score(x_test, y_test)) + " ---")
+        grid_search.fit(x_train, y_train)
+        grid_search.log_best()
+        print(grid_search.score(x_test, y_test))
 
     else:
         df = load_reviews_dataset()
-        print("--- CountVectorizer ---")
-        x_train, x_test, y_train, y_test = train_test_split(df, CustomCountVectorizer())
-        model = train_model(x_train, y_train)
-        print("--- Score: " + str(model.score(x_test, y_test)) + " ---")
-        print("--- Word2Vectorizer ---")
-        x_train, x_test, y_train, y_test = train_test_split(df, Word2Vectorizer())
-        model = train_model(x_train, y_train)
-        print("--- Score: " + str(model.score(x_test, y_test)) + " ---")
 
 
 if __name__ == "__main__":

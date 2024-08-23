@@ -6,7 +6,7 @@ import numpy as np
 from gensim.models import Word2Vec
 
 
-class CustomCountVectorizer:
+class MyCountVectorizer:
     """
     Custom implementation of the CountVectorizer class.
     """
@@ -65,7 +65,7 @@ class CustomCountVectorizer:
         return self.transform(data)
 
 
-class Word2Vectorizer:
+class MyWord2Vectorizer:
     """
     Custom implementation of the Word2Vec class.
     """
