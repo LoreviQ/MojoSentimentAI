@@ -3,11 +3,10 @@ This module contains functions to train a random forest classifier model.
 """
 
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.feature_extraction.text import CountVectorizer
 from sklearn.model_selection import GridSearchCV
 
 
-def train_test_split(df, ratio=0.2):
+def train_test_split(df, cv, ratio=0.2):
     """
     Split the dataset into training and testing sets.
     Converts the text data into a vector.
@@ -21,7 +20,6 @@ def train_test_split(df, ratio=0.2):
     """
     test = df.sample(frac=ratio)
     train = df.drop(test.index)
-    cv = CountVectorizer(ngram_range=(1, 2))
     x_test = cv.fit_transform(test["text"])
     y_test = test["label"]
     x_train = cv.transform(train["text"])
@@ -42,11 +40,11 @@ def train_model(x_train, y_train):
     """
     parameters = {
         "max_features": ["sqrt"],
-        "n_estimators": [500, 1000, 1500],
-        "max_depth": [5, 10, None],
-        "min_samples_split": [5, 10, 15],
-        "min_samples_leaf": [1, 2, 5, 10],
-        "bootstrap": [True, False],
+        "n_estimators": [1000, 1500],
+        "max_depth": [10, None],
+        "min_samples_split": [5],
+        "min_samples_leaf": [1, 2],
+        "bootstrap": [False],
     }
     grid_search = GridSearchCV(
         RandomForestClassifier(),
@@ -54,7 +52,7 @@ def train_model(x_train, y_train):
         cv=5,
         return_train_score=True,
         n_jobs=-1,
-        verbose=5,
+        verbose=1,
     )
     grid_search.fit(x_train, y_train)
     print(grid_search.best_params_)
