@@ -3,6 +3,7 @@ Contains search algorithms for hyperparameter tuning.
 """
 
 from itertools import product
+from multiprocessing import Manager
 
 import numpy as np
 from joblib import Parallel, delayed
@@ -23,6 +24,9 @@ class GridSearchCV:
         return_train_score=False,
         n_jobs=4,
         scoring="accuracy",
+        log=True,
+        save=False,
+        save_path=None,
     ):
         self.vectorizers = vectorizers
         self.models = models
@@ -35,22 +39,55 @@ class GridSearchCV:
         self.best_vectorizer_ = None
         self.best_vectorizer_instance_ = None
         self.best_model_instance_ = None
+        self.log = log
+        self.save = save
+        self.save_path = save_path
+        self.results = []
 
-    def cross_validate(self, model, vectorizer, params, x, y):
+    def cross_validate(
+        self, model, vectorizer, model_params, vectorizer_params, x, y, lock
+    ):
         """
         Perform cross-validation on the model.
         """
         kf = KFold(n_splits=self.cv)
         scores = Parallel(n_jobs=self.n_jobs)(
             delayed(self._single_fold_validation)(
-                model, vectorizer, params, x, y, train_index, val_index, i
+                model,
+                vectorizer,
+                model_params,
+                vectorizer_params,
+                x,
+                y,
+                train_index,
+                val_index,
+                i,
             )
             for i, (train_index, val_index) in enumerate(kf.split(x), 1)
         )
-        return [np.mean(scores), model, vectorizer, params]
+        result = [
+            np.mean(scores),
+            model,
+            vectorizer,
+            model_params,
+            vectorizer_params,
+        ]
+        if self.save:
+            self.save_result(result, lock)
+        else:
+            self.results.append(result)
 
     def _single_fold_validation(
-        self, model, vectorizer, params, x, y, train_index, val_index, fold_index
+        self,
+        model,
+        vectorizer,
+        model_params,
+        vectorizer_params,
+        x,
+        y,
+        train_index,
+        val_index,
+        fold_index,
     ):
         """
         Perform a single fold validation.
@@ -58,11 +95,11 @@ class GridSearchCV:
         x_train, x_val = x[train_index], x[val_index]
         y_train, y_val = y[train_index], y[val_index]
 
-        vectorizer_instance = vectorizer()
+        vectorizer_instance = vectorizer(**vectorizer_params)
         x_train_vec = vectorizer_instance.fit_transform(x_train)
         x_val_vec = vectorizer_instance.transform(x_val)
 
-        model_instance = model(**params)
+        model_instance = model(**model_params)
         model_instance.fit(x_train_vec, y_train)
         y_pred = model_instance.predict(x_val_vec)
 
@@ -71,7 +108,10 @@ class GridSearchCV:
         else:
             raise ValueError("Unsupported scoring method")
 
-        self.log_progress(score, model, vectorizer, params, fold_index)
+        if self.log:
+            self.log_progress(
+                vectorizer, model, vectorizer_params, model_params, fold_index
+            )
 
         return score
 
@@ -79,30 +119,45 @@ class GridSearchCV:
         """
         Fit the model on the data.
         """
-        results = Parallel(n_jobs=self.n_jobs)(
-            delayed(self.cross_validate)(
-                model[0],
-                vectorizer,
-                dict(zip(list(model[1].keys()), param_combination)),
-                x,
-                y,
+        with Manager() as manager:
+            lock = manager.Lock()
+            Parallel(n_jobs=self.n_jobs)(
+                delayed(self.cross_validate)(
+                    model[0],
+                    vectorizer[0],
+                    dict(zip(list(model[1].keys()), model_param_combination)),
+                    dict(zip(list(vectorizer[1].keys()), vectorizer_param_combination)),
+                    x,
+                    y,
+                    lock,
+                )
+                for model in self.models
+                for vectorizer in self.vectorizers
+                for model_param_combination in product(*list(model[1].values()))
+                for vectorizer_param_combination in product(
+                    *list(vectorizer[1].values())
+                )
             )
-            for model in self.models
-            for vectorizer in self.vectorizers
-            for param_combination in product(*list(model[1].values()))
-        )
-
-        # Handle results
-        results_array = np.array(results, dtype=object)
-        max_index = np.argmax(results_array[:, 0])
-        best_score, best_model, best_vectorizer, best_params = results_array[max_index]
-        self.best_score_ = best_score
-        self.best_model_ = (best_model, best_params)
-        self.best_vectorizer_ = best_vectorizer
-        self.best_vectorizer_instance_ = best_vectorizer()
-        self.best_vectorizer_instance_.fit(x)
-        self.best_model_instance_ = best_model(**best_params)
-        self.best_model_instance_.fit(self.best_vectorizer_instance_.transform(x), y)
+        if self.save is False:
+            # Handle results
+            results_array = np.array(self.results, dtype=object)
+            max_index = np.argmax(results_array[:, 0])
+            (
+                best_score,
+                best_model,
+                best_vectorizer,
+                best_model_params,
+                best_vectorizer_params,
+            ) = results_array[max_index]
+            self.best_score_ = best_score
+            self.best_model_ = (best_model, best_model_params)
+            self.best_vectorizer_ = (best_vectorizer, best_vectorizer_params)
+            self.best_vectorizer_instance_ = best_vectorizer(**best_vectorizer_params)
+            self.best_vectorizer_instance_.fit(x)
+            self.best_model_instance_ = best_model(**best_model_params)
+            self.best_model_instance_.fit(
+                self.best_vectorizer_instance_.transform(x), y
+            )
 
         print("\n --- DONE ---")
 
@@ -145,14 +200,14 @@ class GridSearchCV:
         """
         return self.best_score_
 
-    def log_progress(self, score, model, vectorizer, param_combination, i):
+    def log_progress(self, vectorizer, model, vectorizer_params, model_params, i):
         """
         Log the progress of the hyperparameter tuning.
         """
         model_name = model.__name__
         vectorizer_name = vectorizer.__name__
 
-        message = f"SCORE: {score} - {model_name} - {vectorizer_name} - {param_combination} - {i}/{self.cv} ---"
+        message = f"{vectorizer_name} - {vectorizer_params} - {model_name} - {model_params} - {i}/{self.cv} ---"
         print(message, end="\r")
 
     def log_best(self):
@@ -161,5 +216,21 @@ class GridSearchCV:
         """
         print(f"Best score: {self.best_score_}")
         print(f"Best model: {self.best_model_[0].__name__}")
-        print(f"Best vectorizer: {self.best_vectorizer_.__name__}")
-        print(f"Best parameters: {self.best_model_[1]}")
+        print(f"Best vectorizer: {self.best_vectorizer_[0].__name__}")
+        print(f"Best model parameters: {self.best_model_[1]}")
+        print(f"Best vectorizer parameters: {self.best_vectorizer_[1]}")
+
+    def save_result(self, result, lock):
+        """
+        Save a result to a CSV file.
+        """
+
+        if self.save is False:
+            return
+        if self.save_path is None:
+            raise ValueError("No save path provided")
+        with lock:
+            with open(self.save_path, "a", encoding="utf-8") as f:
+                f.write(
+                    f"{result[0]},{result[1].__name__},{result[2].__name__},{result[3]},{result[4]}\n"
+                )

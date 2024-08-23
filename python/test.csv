@@ -1,0 +1,9 @@
+score,model,vectorizer,model_params,vectorizer_params
+0.395,MyRandomForestClassifier,MyCountVectorizer,"{'max_features': 'sqrt', 'n_estimators': 500, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'min_df': 1, 'ngram_range': (1, 1)}"
+0.4175,MyRandomForestClassifier,MyCountVectorizer,"{'max_features': 'sqrt', 'n_estimators': 500, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'min_df': 2, 'ngram_range': (1, 1)}"
+0.4574999999999999,MyRandomForestClassifier,MyCountVectorizer,"{'max_features': 'sqrt', 'n_estimators': 1000, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'min_df': 1, 'ngram_range': (1, 1)}"
+0.4175,MyRandomForestClassifier,MyCountVectorizer,"{'max_features': 'sqrt', 'n_estimators': 1000, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'min_df': 2, 'ngram_range': (1, 1)}"
+0.45874999999999994,MyRandomForestClassifier,MyWord2Vectorizer,"{'max_features': 'sqrt', 'n_estimators': 500, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'vector_size': 100, 'window': 5, 'min_count': 1}"
+0.54125,MyRandomForestClassifier,MyWord2Vectorizer,"{'max_features': 'sqrt', 'n_estimators': 500, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'vector_size': 100, 'window': 5, 'min_count': 5}"
+0.5475,MyRandomForestClassifier,MyWord2Vectorizer,"{'max_features': 'sqrt', 'n_estimators': 1000, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'vector_size': 100, 'window': 5, 'min_count': 1}"
+0.555,MyRandomForestClassifier,MyWord2Vectorizer,"{'max_features': 'sqrt', 'n_estimators': 1000, 'max_depth': 5, 'min_samples_split': 5, 'min_samples_leaf': 1, 'bootstrap': True}","{'vector_size': 100, 'window': 5, 'min_count': 5}"
