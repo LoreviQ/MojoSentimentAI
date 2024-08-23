@@ -67,7 +67,11 @@ class CustomCountVectorizer:
 
 
 class Word2Vectorizer:
-    def __init__(self, vector_size=100, window=5, min_count=1, workers=4):
+    """
+    Custom implementation of the Word2Vec class.
+    """
+
+    def __init__(self, vector_size=100, window=5, min_count=1, workers=-1):
         self.vector_size = vector_size
         self.window = window
         self.min_count = min_count
@@ -75,6 +79,9 @@ class Word2Vectorizer:
         self.model = None
 
     def fit(self, documents):
+        """
+        Fit the Word2Vec model on the text data.
+        """
         self.model = Word2Vec(
             sentences=documents,
             vector_size=self.vector_size,
@@ -84,6 +91,9 @@ class Word2Vectorizer:
         )
 
     def transform(self, documents):
+        """
+        Transform the text data into vectors.
+        """
         vectors = []
         for document in documents:
             vector = np.zeros(self.vector_size)
@@ -98,5 +108,8 @@ class Word2Vectorizer:
         return np.array(vectors)
 
     def fit_transform(self, documents):
+        """
+        Fit and transform the text data into vectors.
+        """
         self.fit(documents)
         return self.transform(documents)
