@@ -5,10 +5,21 @@ from sklearn.tree import DecisionTreeClassifier
 
 
 class CustomRandomForestClassifier:
-    def __init__(self, n_estimators=100, max_features="sqrt", max_depth=None):
+    def __init__(
+        self,
+        n_estimators=100,
+        max_features="sqrt",
+        max_depth=None,
+        min_samples_split=2,
+        min_samples_leaf=1,
+        bootstrap=True,
+    ):
         self.n_estimators = n_estimators
         self.max_features = max_features
         self.max_depth = max_depth
+        self.min_samples_split = min_samples_split
+        self.min_samples_leaf = min_samples_leaf
+        self.bootstrap = bootstrap
         self.trees = []
 
     def _bootstrap_sample(self, x, y):
@@ -30,10 +41,15 @@ class CustomRandomForestClassifier:
     def fit(self, x, y):
         self.trees = []
         for _ in range(self.n_estimators):
-            x_sample, y_sample = self._bootstrap_sample(x, y)
-            tree = DecisionTreeClassifier(max_depth=self.max_depth)
-            features = self._random_features(x_sample)
-            tree.fit(x_sample[:, features], y_sample)
+            if self.bootstrap:
+                x, y = self._bootstrap_sample(x, y)
+            tree = DecisionTreeClassifier(
+                max_depth=self.max_depth,
+                min_samples_split=self.min_samples_split,
+                min_samples_leaf=self.min_samples_leaf,
+            )
+            features = self._random_features(x)
+            tree.fit(x[:, features], y)
             self.trees.append((tree, features))
 
     def predict(self, x):
