@@ -11,7 +11,7 @@ class GridSearchCV:
         self,
         vectorizers,
         models,
-        parameters,
+        model_params,
         cv=5,
         return_train_score=False,
         n_jobs=4,
@@ -19,7 +19,7 @@ class GridSearchCV:
     ):
         self.vectorizers = vectorizers
         self.models = models
-        self.parameters = parameters
+        self.model_params = model_params
         self.cv = cv
         self.return_train_score = return_train_score
         self.n_jobs = n_jobs
@@ -71,31 +71,33 @@ class GridSearchCV:
         self.length = (
             len(self.models)
             * len(self.vectorizers)
-            * len(list(product(*list(self.parameters.values()))))
+            * len(list(product(*list(self.model_params.values()))))
         )
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self.cross_validate)(
                 model,
                 vectorizer,
-                dict(zip(list(self.parameters.keys()), param_combination)),
+                dict(zip(list(self.model_params.keys()), param_combination)),
                 x,
                 y,
             )
             for model in self.models
             for vectorizer in self.vectorizers
-            for param_combination in product(*list(self.parameters.values()))
+            for param_combination in product(*list(self.model_params.values()))
         )
 
         # Find the best result
         for i, (model, vectorizer, param_combination) in enumerate(
             product(
-                self.models, self.vectorizers, product(*list(self.parameters.values()))
+                self.models,
+                self.vectorizers,
+                product(*list(self.model_params.values())),
             )
         ):
             if results[i] > self.best_score_:
                 self.best_score_ = results[i]
                 self.best_params_ = dict(
-                    zip(list(self.parameters.keys()), param_combination)
+                    zip(list(self.model_params.keys()), param_combination)
                 )
                 self.best_model_ = model
                 self.best_vectorizer_ = vectorizer

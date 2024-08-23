@@ -15,7 +15,7 @@ def main(test):
     Main function
     """
     if test:
-        parameters = {
+        model_params = {
             "max_features": ["sqrt"],
             "n_estimators": [500],
             "max_depth": [5],
@@ -24,7 +24,7 @@ def main(test):
             "bootstrap": [True],
         }
     else:
-        parameters = {
+        model_params = {
             "max_features": ["sqrt", "log2"],
             "n_estimators": [500, 1000, 1500],
             "max_depth": [5, 10, None],
@@ -38,7 +38,7 @@ def main(test):
     grid_search = GridSearchCV(
         [MyCountVectorizer, MyWord2Vectorizer],
         [MyRandomForestClassifier],
-        parameters,
+        model_params,
         n_jobs=-1,
     )
     grid_search.fit(x_train, y_train)
