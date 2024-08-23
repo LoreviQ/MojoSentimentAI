@@ -17,7 +17,7 @@ def main(test):
     if test:
         model_params = {
             "max_features": ["sqrt"],
-            "n_estimators": [500],
+            "n_estimators": [500, 1000],
             "max_depth": [5],
             "min_samples_split": [5],
             "min_samples_leaf": [1],
@@ -36,11 +36,11 @@ def main(test):
     x_train, x_test, y_train, y_test = split_df(df)
 
     grid_search = GridSearchCV(
-        [MyCountVectorizer, MyWord2Vectorizer],
-        [MyRandomForestClassifier],
-        model_params,
+        [MyCountVectorizer],
+        [(MyRandomForestClassifier, model_params)],
         n_jobs=-1,
     )
+
     grid_search.fit(x_train, y_train)
     grid_search.log_best()
     print(grid_search.score(x_test, y_test))

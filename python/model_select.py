@@ -19,7 +19,6 @@ class GridSearchCV:
         self,
         vectorizers,
         models,
-        model_params,
         cv=5,
         return_train_score=False,
         n_jobs=4,
@@ -27,19 +26,15 @@ class GridSearchCV:
     ):
         self.vectorizers = vectorizers
         self.models = models
-        self.model_params = model_params
         self.cv = cv
         self.return_train_score = return_train_score
         self.n_jobs = n_jobs
         self.scoring = scoring
-        self.best_params_ = None
         self.best_score_ = -np.inf
         self.best_model_ = None
         self.best_vectorizer_ = None
         self.best_vectorizer_instance_ = None
         self.best_model_instance_ = None
-        self.progress = 0
-        self.length = 0
 
     def cross_validate(self, model, vectorizer, params, x, y):
         """
@@ -52,7 +47,7 @@ class GridSearchCV:
             )
             for i, (train_index, val_index) in enumerate(kf.split(x), 1)
         )
-        return np.mean(scores)
+        return [np.mean(scores), model, vectorizer, params]
 
     def _single_fold_validation(
         self, model, vectorizer, params, x, y, train_index, val_index, fold_index
@@ -84,45 +79,30 @@ class GridSearchCV:
         """
         Fit the model on the data.
         """
-        self.length = (
-            len(self.models)
-            * len(self.vectorizers)
-            * len(list(product(*list(self.model_params.values()))))
-        )
         results = Parallel(n_jobs=self.n_jobs)(
             delayed(self.cross_validate)(
-                model,
+                model[0],
                 vectorizer,
-                dict(zip(list(self.model_params.keys()), param_combination)),
+                dict(zip(list(model[1].keys()), param_combination)),
                 x,
                 y,
             )
             for model in self.models
             for vectorizer in self.vectorizers
-            for param_combination in product(*list(self.model_params.values()))
+            for param_combination in product(*list(model[1].values()))
         )
 
-        # Find the best result
-        for i, (model, vectorizer, param_combination) in enumerate(
-            product(
-                self.models,
-                self.vectorizers,
-                product(*list(self.model_params.values())),
-            )
-        ):
-            if results[i] > self.best_score_:
-                self.best_score_ = results[i]
-                self.best_params_ = dict(
-                    zip(list(self.model_params.keys()), param_combination)
-                )
-                self.best_model_ = model
-                self.best_vectorizer_ = vectorizer
-                self.best_vectorizer_instance_ = vectorizer()
-                self.best_vectorizer_instance_.fit(x)
-                self.best_model_instance_ = model(**self.best_params_)
-                self.best_model_instance_.fit(
-                    self.best_vectorizer_instance_.transform(x), y
-                )
+        # Handle results
+        results_array = np.array(results, dtype=object)
+        max_index = np.argmax(results_array[:, 0])
+        best_score, best_model, best_vectorizer, best_params = results_array[max_index]
+        self.best_score_ = best_score
+        self.best_model_ = (best_model, best_params)
+        self.best_vectorizer_ = best_vectorizer
+        self.best_vectorizer_instance_ = best_vectorizer()
+        self.best_vectorizer_instance_.fit(x)
+        self.best_model_instance_ = best_model(**best_params)
+        self.best_model_instance_.fit(self.best_vectorizer_instance_.transform(x), y)
 
         print("\n --- DONE ---")
 
@@ -157,7 +137,7 @@ class GridSearchCV:
         """
         Get the best parameters
         """
-        return self.best_params_
+        return self.best_model_[1]
 
     def get_best_score(self):
         """
@@ -180,6 +160,6 @@ class GridSearchCV:
         Log the best hyperparameters and model.
         """
         print(f"Best score: {self.best_score_}")
-        print(f"Best model: {self.best_model_.__name__}")
+        print(f"Best model: {self.best_model_[0].__name__}")
         print(f"Best vectorizer: {self.best_vectorizer_.__name__}")
-        print(f"Best parameters: {self.best_params_}")
+        print(f"Best parameters: {self.best_model_[1]}")
