@@ -15,20 +15,18 @@ def main(test):
     """
     if test:
         df = load_reviews_dataset()
-        cv = CustomCountVectorizer(3)
+        cv = CustomCountVectorizer(ngram_range=(1, 4))
         cv.fit_transform(df["text"])
 
     else:
         df = load_reviews_dataset()
-        print("--- CountVectorizer min=1 ---")
-        x_train, x_test, y_train, y_test = train_test_split(
-            df, CustomCountVectorizer(1)
-        )
+        print("--- CountVectorizer ngram_range=(1, 1) ---")
+        x_train, x_test, y_train, y_test = train_test_split(df, CustomCountVectorizer())
         model = train_model(x_train, y_train)
         print("--- Score: " + str(model.score(x_test, y_test)) + " ---")
-        print("--- CountVectorizer min=3 ---")
+        print("--- CountVectorizer ngram_range=(1, 2) ---")
         x_train, x_test, y_train, y_test = train_test_split(
-            df, CustomCountVectorizer(3)
+            df, CustomCountVectorizer(ngram_range=(1, 2))
         )
         model = train_model(x_train, y_train)
         print("--- Score: " + str(model.score(x_test, y_test)) + " ---")

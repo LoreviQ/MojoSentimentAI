@@ -15,22 +15,33 @@ class CustomCountVectorizer:
         self.min_df = min_df
         self.ngram_range = ngram_range
 
+    def _generate_ngrams(self, document):
+        """
+        Generate ngrams from the text data.
+        """
+        words = document.split()
+        ngrams = []
+        for n in range(self.ngram_range[0], self.ngram_range[1] + 1):
+            for i in range(len(words) - n + 1):
+                ngrams.append(" ".join(words[i : i + n]))
+        return ngrams
+
     def fit(self, documents):
         """
         Fit the vectorizer on the text data.
         """
         for document in documents:
-            for word in document.split():
-                if word in self.vocabulary_:
-                    self.vocabulary_[word] = self.vocabulary_[word] + 1
+            for ngram in self._generate_ngrams(document):
+                if ngram in self.vocabulary_:
+                    self.vocabulary_[ngram] = self.vocabulary_[ngram] + 1
                 else:
-                    self.vocabulary_[word] = 1
-        for word, frequency in list(self.vocabulary_.items()):
+                    self.vocabulary_[ngram] = 1
+        for ngram, frequency in list(self.vocabulary_.items()):
             if frequency < self.min_df:
-                del self.vocabulary_[word]
+                del self.vocabulary_[ngram]
         self.vocabulary_ = {
-            word: (i, frequency)
-            for i, (word, frequency) in enumerate(self.vocabulary_.items())
+            ngram: (i, frequency)
+            for i, (ngram, frequency) in enumerate(self.vocabulary_.items())
         }
 
     def transform(self, documents):
@@ -40,9 +51,9 @@ class CustomCountVectorizer:
         vectors = []
         for document in documents:
             vector = np.zeros(len(self.vocabulary_), dtype=int)
-            for word in document.split():
-                if word in self.vocabulary_:
-                    vector[self.vocabulary_[word][0]] += 1
+            for ngram in document.split():
+                if ngram in self.vocabulary_:
+                    vector[self.vocabulary_[ngram][0]] += 1
             vectors.append(vector)
         return np.array(vectors)
 
