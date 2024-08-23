@@ -1,3 +1,7 @@
+"""
+Contains the classifiers used in the project
+"""
+
 from collections import Counter
 
 import numpy as np
@@ -5,6 +9,10 @@ from sklearn.tree import DecisionTreeClassifier
 
 
 class MyRandomForestClassifier:
+    """
+    Custom implementation of the RandomForestClassifier class.
+    """
+
     def __init__(
         self,
         n_estimators=100,
@@ -23,6 +31,9 @@ class MyRandomForestClassifier:
         self.trees = []
 
     def _bootstrap_sample(self, x, y):
+        """
+        Create a bootstrap sample of the data.
+        """
         y = y.reset_index(drop=True)
 
         n_samples = x.shape[0]
@@ -30,6 +41,9 @@ class MyRandomForestClassifier:
         return x[indices], y[indices]
 
     def _random_features(self, x):
+        """
+        Select a random subset of features.
+        """
         n_features = x.shape[1]
         if self.max_features == "sqrt":
             max_features = int(np.sqrt(n_features))
@@ -41,6 +55,9 @@ class MyRandomForestClassifier:
         return features
 
     def fit(self, x, y):
+        """
+        Fit the RandomForest model on the data.
+        """
         self.trees = []
         for _ in range(self.n_estimators):
             if self.bootstrap:
@@ -55,6 +72,9 @@ class MyRandomForestClassifier:
             self.trees.append((tree, features))
 
     def predict(self, x):
+        """
+        Make predictions using the RandomForest
+        """
         tree_preds = np.array(
             [tree.predict(x[:, features]) for tree, features in self.trees]
         )
@@ -64,6 +84,9 @@ class MyRandomForestClassifier:
         return np.array(majority_votes)
 
     def score(self, x, y):
+        """
+        Compute the accuracy of the model.
+        """
         predictions = self.predict(x)
         accuracy = np.mean(predictions == y)
         return accuracy

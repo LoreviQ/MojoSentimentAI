@@ -1,3 +1,7 @@
+"""
+Contains search algorithms for hyperparameter tuning.
+"""
+
 from itertools import product
 
 import numpy as np
@@ -7,6 +11,10 @@ from sklearn.model_selection import KFold
 
 
 class GridSearchCV:
+    """
+    Custom implementation of the GridSearchCV class.
+    """
+
     def __init__(
         self,
         vectorizers,
@@ -34,6 +42,9 @@ class GridSearchCV:
         self.length = 0
 
     def cross_validate(self, model, vectorizer, params, x, y):
+        """
+        Perform cross-validation on the model.
+        """
         kf = KFold(n_splits=self.cv)
         scores = Parallel(n_jobs=self.n_jobs)(
             delayed(self._single_fold_validation)(
@@ -46,6 +57,9 @@ class GridSearchCV:
     def _single_fold_validation(
         self, model, vectorizer, params, x, y, train_index, val_index, fold_index
     ):
+        """
+        Perform a single fold validation.
+        """
         x_train, x_val = x[train_index], x[val_index]
         y_train, y_val = y[train_index], y[val_index]
 
@@ -62,12 +76,14 @@ class GridSearchCV:
         else:
             raise ValueError("Unsupported scoring method")
 
-        # Log the progress
         self.log_progress(score, model, vectorizer, params, fold_index)
 
         return score
 
     def fit(self, x, y):
+        """
+        Fit the model on the data.
+        """
         self.length = (
             len(self.models)
             * len(self.vectorizers)
@@ -111,27 +127,48 @@ class GridSearchCV:
         print("\n --- DONE ---")
 
     def predict(self, x):
+        """
+        Make predictions using the best model.
+        """
         x_vec = self.best_vectorizer_instance_.transform(x)
         return self.best_model_instance_.predict(x_vec)
 
     def score(self, x, y):
+        """
+        Calculate the accuracy of the model.
+        """
         predictions = self.predict(x)
         accuracy = np.mean(predictions == y)
         return accuracy
 
-    def best_model(self):
+    def get_best_model(self):
+        """
+        Get the best model instance
+        """
         return self.best_model_instance_
 
-    def best_vectorizer(self):
+    def get_best_vectorizer(self):
+        """
+        Get the best vectorizer instance
+        """
         return self.best_vectorizer_instance_
 
-    def best_params(self):
+    def get_best_params(self):
+        """
+        Get the best parameters
+        """
         return self.best_params_
 
-    def best_score(self):
+    def get_best_score(self):
+        """
+        Get the best score
+        """
         return self.best_score_
 
     def log_progress(self, score, model, vectorizer, param_combination, i):
+        """
+        Log the progress of the hyperparameter tuning.
+        """
         model_name = model.__name__
         vectorizer_name = vectorizer.__name__
 
@@ -139,6 +176,9 @@ class GridSearchCV:
         print(message, end="\r")
 
     def log_best(self):
+        """
+        Log the best hyperparameters and model.
+        """
         print(f"Best score: {self.best_score_}")
         print(f"Best model: {self.best_model_.__name__}")
         print(f"Best vectorizer: {self.best_vectorizer_.__name__}")
