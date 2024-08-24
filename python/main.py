@@ -5,7 +5,7 @@ Main module to load the dataset and train the model.
 import argparse
 
 from classifiers import MyRandomForestClassifier
-from data import load_reviews_dataset, split_df
+from data import load_emoticons_dataset, load_reviews_dataset, split_df
 from model_select import MyGridSearchCV
 from vectorizers import MyCountVectorizer, MyWord2Vectorizer
 
@@ -21,11 +21,6 @@ def main(test):
             "min_df": [1],
             "ngram_range": [(1, 1)],
         }
-        w2_vec_params = {
-            "vector_size": [100],
-            "window": [5],
-            "min_count": [1],
-        }
         model_params = {
             "max_features": ["sqrt", "log2"],
             "n_estimators": [500, 1000, 1500],
@@ -34,21 +29,23 @@ def main(test):
             "min_samples_leaf": [1, 2, 5, 10],
             "bootstrap": [True, False],
         }
-        save_path = "model.csv"
-    df = load_reviews_dataset()
+        save_path = "./../results/emoticons_model_params.csv"
+    df = load_emoticons_dataset()
     x_train, x_test, y_train, y_test = split_df(df)
-    # x_train, y_train = df["text"], df["label"]
 
     grid_search = MyGridSearchCV(
-        [(MyCountVectorizer, c_vec_params), (MyWord2Vectorizer, w2_vec_params)],
+        [(MyCountVectorizer, c_vec_params)],
         [(MyRandomForestClassifier, model_params)],
         n_jobs=4,
         log=True,
         save=True,
         save_path=save_path,
+        memory=True,
     )
 
     grid_search.fit(x_train, y_train)
+    grid_search.log_best()
+    grid_search.score(x_test, y_test)
 
 
 if __name__ == "__main__":

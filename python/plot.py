@@ -100,7 +100,7 @@ def plot_model(df):
 
 
 def plot():
-    df = read_results("model.csv")
+    df = read_results("./../results/emoticons_model_params.csv")
     plot_model(df)
 
 

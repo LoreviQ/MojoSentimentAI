@@ -43,9 +43,23 @@ def load_reviews_dataset():
     Returns:
         pd.DataFrame: The cleaned dataset.
     """
-    df = pd.read_csv("./../datasets/reviews_dataset.csv")
+    df = pd.read_csv("./../datasets/reviews.csv")
     df = df.drop(columns=["Unnamed: 0"])
     df = df.rename(columns={"sentence": "text"})
+    df = df.dropna()
+    df["text"] = df["text"].apply(tokenize_text)
+    return df
+
+
+def load_emoticons_dataset():
+    """
+    Load the emoticons dataset from a CSV file and clean it.
+
+    Returns:
+        pd.DataFrame: The cleaned dataset.
+    """
+    df = pd.read_csv("./../datasets/emoticons.csv", header=None)
+    df.columns = ["text", "label"]
     df = df.dropna()
     df["text"] = df["text"].apply(tokenize_text)
     return df

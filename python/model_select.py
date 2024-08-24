@@ -27,6 +27,7 @@ class MyGridSearchCV:
         log=True,
         save=False,
         save_path=None,
+        memory=True,  # keeps the results in memory for later use
     ):
         self.vectorizers = vectorizers
         self.models = models
@@ -42,9 +43,60 @@ class MyGridSearchCV:
         self.log = log
         self.save = save
         self.save_path = save_path
+        self.memory = memory
         self.results = []
 
-    def cross_validate(
+    def fit(self, x, y):
+        """
+        Fit the model on the data.
+        """
+        if self.memory is False and self.save is False:
+            raise ValueError("Enable memory or save to keep results")
+
+        with Manager() as manager:
+            lock = manager.Lock()
+            Parallel(n_jobs=self.n_jobs)(
+                delayed(self._cross_validate)(
+                    model[0],
+                    vectorizer[0],
+                    dict(zip(list(model[1].keys()), model_param_combination)),
+                    dict(zip(list(vectorizer[1].keys()), vectorizer_param_combination)),
+                    x,
+                    y,
+                    lock,
+                )
+                for model in self.models
+                for vectorizer in self.vectorizers
+                for model_param_combination in product(*list(model[1].values()))
+                for vectorizer_param_combination in product(
+                    *list(vectorizer[1].values())
+                )
+            )
+
+        if self.memory:
+            # Handle results
+            results_array = np.array(self.results, dtype=object)
+            max_index = np.argmax(results_array[:, 0])
+            (
+                best_score,
+                best_model,
+                best_vectorizer,
+                best_model_params,
+                best_vectorizer_params,
+            ) = results_array[max_index]
+            self.best_score_ = best_score
+            self.best_model_ = (best_model, best_model_params)
+            self.best_vectorizer_ = (best_vectorizer, best_vectorizer_params)
+            self.best_vectorizer_instance_ = best_vectorizer(**best_vectorizer_params)
+            self.best_vectorizer_instance_.fit(x)
+            self.best_model_instance_ = best_model(**best_model_params)
+            self.best_model_instance_.fit(
+                self.best_vectorizer_instance_.transform(x), y
+            )
+
+        print("\n --- DONE ---")
+
+    def _cross_validate(
         self, model, vectorizer, model_params, vectorizer_params, x, y, lock
     ):
         """
@@ -73,8 +125,8 @@ class MyGridSearchCV:
             vectorizer_params,
         ]
         if self.save:
-            self.save_result(result, lock)
-        else:
+            self._save_result(result, lock)
+        if self.memory:
             self.results.append(result)
 
     def _single_fold_validation(
@@ -109,62 +161,18 @@ class MyGridSearchCV:
             raise ValueError("Unsupported scoring method")
 
         if self.log:
-            self.log_progress(
+            self._log_progress(
                 vectorizer, model, vectorizer_params, model_params, fold_index
             )
 
         return score
 
-    def fit(self, x, y):
-        """
-        Fit the model on the data.
-        """
-        with Manager() as manager:
-            lock = manager.Lock()
-            Parallel(n_jobs=self.n_jobs)(
-                delayed(self.cross_validate)(
-                    model[0],
-                    vectorizer[0],
-                    dict(zip(list(model[1].keys()), model_param_combination)),
-                    dict(zip(list(vectorizer[1].keys()), vectorizer_param_combination)),
-                    x,
-                    y,
-                    lock,
-                )
-                for model in self.models
-                for vectorizer in self.vectorizers
-                for model_param_combination in product(*list(model[1].values()))
-                for vectorizer_param_combination in product(
-                    *list(vectorizer[1].values())
-                )
-            )
-        if self.save is False:
-            # Handle results
-            results_array = np.array(self.results, dtype=object)
-            max_index = np.argmax(results_array[:, 0])
-            (
-                best_score,
-                best_model,
-                best_vectorizer,
-                best_model_params,
-                best_vectorizer_params,
-            ) = results_array[max_index]
-            self.best_score_ = best_score
-            self.best_model_ = (best_model, best_model_params)
-            self.best_vectorizer_ = (best_vectorizer, best_vectorizer_params)
-            self.best_vectorizer_instance_ = best_vectorizer(**best_vectorizer_params)
-            self.best_vectorizer_instance_.fit(x)
-            self.best_model_instance_ = best_model(**best_model_params)
-            self.best_model_instance_.fit(
-                self.best_vectorizer_instance_.transform(x), y
-            )
-
-        print("\n --- DONE ---")
-
     def predict(self, x):
         """
         Make predictions using the best model.
         """
+        if self.memory is False:
+            raise ValueError("Cannot predict without keeping results in memory")
         x_vec = self.best_vectorizer_instance_.transform(x)
         return self.best_model_instance_.predict(x_vec)
 
@@ -172,6 +180,8 @@ class MyGridSearchCV:
         """
         Calculate the accuracy of the model.
         """
+        if self.memory is False:
+            raise ValueError("Cannot score without keeping results in memory")
         predictions = self.predict(x)
         accuracy = np.mean(predictions == y)
         return accuracy
@@ -180,27 +190,37 @@ class MyGridSearchCV:
         """
         Get the best model instance
         """
+        if self.memory is False:
+            raise ValueError("Cannot get best model without keeping results in memory")
         return self.best_model_instance_
 
     def get_best_vectorizer(self):
         """
         Get the best vectorizer instance
         """
+        if self.memory is False:
+            raise ValueError(
+                "Cannot get best vectorizer without keeping results in memory"
+            )
         return self.best_vectorizer_instance_
 
     def get_best_params(self):
         """
         Get the best parameters
         """
+        if self.memory is False:
+            raise ValueError("Cannot get best params without keeping results in memory")
         return self.best_model_[1]
 
     def get_best_score(self):
         """
         Get the best score
         """
+        if self.memory is False:
+            raise ValueError("Cannot get best score without keeping results in memory")
         return self.best_score_
 
-    def log_progress(self, vectorizer, model, vectorizer_params, model_params, i):
+    def _log_progress(self, vectorizer, model, vectorizer_params, model_params, i):
         """
         Log the progress of the hyperparameter tuning.
         """
@@ -214,13 +234,15 @@ class MyGridSearchCV:
         """
         Log the best hyperparameters and model.
         """
+        if self.memory is False:
+            raise ValueError("Cannot log best without keeping results in memory")
         print(f"Best score: {self.best_score_}")
         print(f"Best model: {self.best_model_[0].__name__}")
         print(f"Best vectorizer: {self.best_vectorizer_[0].__name__}")
         print(f"Best model parameters: {self.best_model_[1]}")
         print(f"Best vectorizer parameters: {self.best_vectorizer_[1]}")
 
-    def save_result(self, result, lock):
+    def _save_result(self, result, lock):
         """
         Save a result to a CSV file.
         """
