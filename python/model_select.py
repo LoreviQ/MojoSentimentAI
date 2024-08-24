@@ -228,7 +228,7 @@ class MyGridSearchCV:
         if self.save is False:
             return
         if self.save_path is None:
-            raise ValueError("No save path provided")
+            self.save_path = "results.csv"
         with lock:
             with open(self.save_path, "a", encoding="utf-8") as f:
                 f.write(
