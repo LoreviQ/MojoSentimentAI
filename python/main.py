@@ -20,7 +20,7 @@ def sklearn_version():
     Sanity checking the implementation to compare with the custom implementation.
     """
     # Load dataset
-    df = load_amazon_reviews_dataset()
+    df = load_amazon_reviews_dataset(1000)
     x_train, x_test, y_train, y_test = train_test_split(
         df["text"], df["label"], test_size=0.2
     )

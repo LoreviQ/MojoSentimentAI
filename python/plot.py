@@ -99,7 +99,7 @@ def plot_model(df):
             plt.show()
 
 
-def plot():
+def plot_params():
     path = "./../results/amazon_reviews_sklearn_test.csv"
     df = pd.read_csv(path)
     columns = [
@@ -178,5 +178,28 @@ def plot():
     plt.show()
 
 
+def plot_model_collapse():
+    path = "./../results/amazon_reviews_sklearn_collapse_log.csv"
+    df = pd.read_csv(path)
+
+    # Group by 'ratio' and calculate the mean, min, and max of 'score'
+    stats = df.groupby("ratio")["score"].agg(["mean", "min", "max"]).reset_index()
+
+    # Plotting
+    plt.figure(figsize=(10, 6))
+    plt.plot(stats["ratio"], stats["mean"], linestyle="-", label="Average Score")
+    plt.scatter(stats["ratio"], stats["min"], color="red", label="Min Score", alpha=0.6)
+    plt.scatter(
+        stats["ratio"], stats["max"], color="green", label="Max Score", alpha=0.6
+    )
+    plt.title("Average, Min, and Max Score vs Ratio")
+    plt.xlabel("Ratio")
+    plt.ylabel("Score")
+    plt.xscale("log")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
 if __name__ == "__main__":
-    plot()
+    plot_model_collapse()
