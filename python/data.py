@@ -65,6 +65,23 @@ def load_emoticons_dataset():
     return df
 
 
+def load_amazon_reviews_dataset(rows=None):
+    """
+    Load the Amazon reviews dataset from a CSV file and clean it.
+
+    Args:
+        rows (int, optional): Number of rows to read from the CSV file. If None, read the entire dataset.
+
+    Returns:
+        pd.DataFrame: The cleaned dataset.
+    """
+    df = pd.read_csv("./../datasets/amazon_reviews.csv", nrows=rows)
+    df.columns = ["text", "label"]
+    df = df.dropna()
+    df["text"] = df["text"].apply(tokenize_text)
+    return df
+
+
 def split_df(df, ratio=0.2):
     """
     Split the dataset into training and testing sets.
