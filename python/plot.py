@@ -178,28 +178,93 @@ def plot_params():
     plt.show()
 
 
-def plot_model_collapse():
+def plot_training_data_increase(ax=None):
     path = "./../results/amazon_reviews_sklearn_collapse_log.csv"
     df = pd.read_csv(path)
+    show = False
+    if ax is None:
+        _, ax = plt.subplots(figsize=(12, 6))
+        show = True
 
-    # Group by 'ratio' and calculate the mean, min, and max of 'score'
-    stats = df.groupby("ratio")["score"].agg(["mean", "min", "max"]).reset_index()
+    # Calculate the number of samples
+    df["samples"] = df["ratio"] * 320000
+
+    # Group by 'samples' and calculate the mean, min, and max of 'score'
+    stats = df.groupby("samples")["score"].agg(["mean", "min", "max"]).reset_index()
 
     # Plotting
-    plt.figure(figsize=(10, 6))
-    plt.plot(stats["ratio"], stats["mean"], linestyle="-", label="Average Score")
-    plt.scatter(stats["ratio"], stats["min"], color="red", label="Min Score", alpha=0.6)
-    plt.scatter(
-        stats["ratio"], stats["max"], color="green", label="Max Score", alpha=0.6
+    ax.plot(stats["samples"], stats["mean"], linestyle="-", label="Average Score")
+    ax.scatter(
+        stats["samples"], stats["min"], color="red", label="Min Score", alpha=0.6
     )
-    plt.title("Average, Min, and Max Score vs Ratio")
-    plt.xlabel("Ratio")
-    plt.ylabel("Score")
-    plt.xscale("log")
-    plt.grid(True)
-    plt.legend()
-    plt.show()
+    ax.scatter(
+        stats["samples"], stats["max"], color="green", label="Max Score", alpha=0.6
+    )
+    ax.set_title("Average, Min, and Max Score vs Samples")
+    ax.set_xlabel("Number of Samples in Training Data")
+    ax.set_ylabel("Score")
+    ax.set_xscale("log")
+    ax.grid(True)
+    ax.legend(loc="center left", bbox_to_anchor=(1, 0.5))
+
+    if show:
+        plt.tight_layout()
+        plt.show()
+
+
+def plot_model_collapse(ax=None):
+    path = "./../results/amazon_reviews_sklearn_collapse_log_cr1.csv"
+    df = pd.read_csv(path)
+    show = False
+    if ax is None:
+        _, ax = plt.subplots(figsize=(12, 6))
+        show = True
+
+    # Calculate the number of samples
+    df["initial_samples"] = df["initial_ratio"] * 320000
+    df["new_samples"] = df["new_ratio"] * 320000
+
+    # Get case where no collapse was performed
+    c_0 = df.loc[df["initial_samples"] == df["new_samples"]]
+    c_0 = c_0.groupby("new_samples")["score"].agg(["mean", "min", "max"]).reset_index()
+    ax.plot(
+        c_0["new_samples"],
+        c_0["mean"],
+        linestyle="-",
+        label="No Collapse",
+    )
+
+    # split by collapse stage
+    grouped = df.groupby("initial_samples")
+    dfs = [group for _, group in grouped]
+    for df in dfs:
+        c = df.groupby("new_samples")["score"].agg(["mean", "min", "max"]).reset_index()
+        ax.plot(
+            c["new_samples"],
+            c["mean"],
+            linestyle="-",
+            label=f'{df["initial_samples"].iloc[0]:.0f}',
+        )
+
+    ax.set_title("Plotting Model Collapse at different Sample Starts")
+    ax.set_xlabel("Number of Samples in Training Data")
+    ax.set_ylabel("Mean Score")
+    ax.set_xscale("log")
+    ax.grid(True)
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1, 0.5),
+        title="No. Samples in Training Data at Collapse Start",
+    )
+
+    if show:
+        plt.tight_layout()
+        plt.show()
 
 
 if __name__ == "__main__":
-    plot_model_collapse()
+    fig, axes = plt.subplots(2, 1, figsize=(15, 10))
+    plot_training_data_increase(axes[0])
+    plot_model_collapse(axes[1])
+    plt.tight_layout()
+    plt.show()
