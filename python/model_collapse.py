@@ -7,13 +7,35 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.feature_extraction.text import CountVectorizer
 
 
+def get_params():
+    c_vec_params = {
+        "min_df": 1,
+        "ngram_range": (1, 1),
+    }
+    model_params = {
+        "max_features": "sqrt",
+        "n_estimators": 1000,
+        "max_depth": 20,
+        "min_samples_split": 2,
+        "min_samples_leaf": 1,
+        "bootstrap": False,
+    }
+    return c_vec_params, model_params
+
+
 def score_model(test_df, vectorizer, model):
+    """
+    Score a model on a test dataset
+    """
     x_test = vectorizer.transform(test_df["text"])
     y_test = test_df["label"]
     return model.score(x_test, y_test)
 
 
 def train_model(train_df, c_vec_params, model_params):
+    """
+    Train a model on a training dataset
+    """
     start_time = time.time()
     c_vec = CountVectorizer(**c_vec_params)
     x_train = c_vec.fit_transform(train_df["text"])
@@ -24,7 +46,17 @@ def train_model(train_df, c_vec_params, model_params):
     return c_vec, model, training_time
 
 
+def get_ratio(n):
+    """
+    Get the ratio for a given n
+    """
+    return 0.39810717055349725**n
+
+
 def process_ratio_cv(collapse_ratio, n, cv, df, c_vec_params, model_params):
+    """
+    trains and tests models repeatedly at varying stages of collapse
+    """
     result = []
     test_df = df.sample(frac=0.2)
     train_df = df.drop(test_df.index)
@@ -63,22 +95,8 @@ def expand_collapse_df(
     return collapse_df
 
 
-def model_collapse_sklearn():
-    df = load_amazon_reviews_dataset()
-    df["text"] = df["text"].str.join(" ")
-
-    c_vec_params = {
-        "min_df": 1,
-        "ngram_range": (1, 1),
-    }
-    model_params = {
-        "max_features": "sqrt",
-        "n_estimators": 1000,
-        "max_depth": 20,
-        "min_samples_split": 2,
-        "min_samples_leaf": 1,
-        "bootstrap": False,
-    }
+def model_collapse_sklearn_initial(df):
+    c_vec_params, model_params = get_params()
     results = Parallel(n_jobs=-1)(
         delayed(process_ratio_cv)(1, n, cv, df, c_vec_params, model_params)
         for n in range(10)
@@ -93,9 +111,50 @@ def model_collapse_sklearn():
     )
 
 
-def get_ratio(n):
-    return 0.39810717055349725**n
+def process_size_cv(initial_size, increment, rate, cv, df, c_vec_params, model_params):
+    """
+    trains and tests models repeatedly at varying stages of collapse
+    """
+    result = []
+    test_df = df.sample(frac=0.2)
+    train_df = df.drop(test_df.index)
+    initial_ratio = get_ratio(n)
+    collapse_df, model, vectorizer = (None, None, None)
+    while n >= 0:
+        size_ratio = get_ratio(n)
+        collapse_df = expand_collapse_df(
+            size_ratio, collapse_ratio, train_df, model, vectorizer, collapse_df
+        )
+        vectorizer, model, training_time = train_model(
+            collapse_df, c_vec_params, model_params
+        )
+        score = score_model(test_df, vectorizer, model)
+        result += [[initial_ratio, size_ratio, cv, score, training_time]]
+        n = n - 1
+        print(
+            f"Initial Ratio: {initial_ratio:.2g} - Ratio: {size_ratio:.2g} - Collapse Ratio: {collapse_ratio} - CV: {cv} - Score: {score} - Took: {training_time:.2f}s"
+        )
+    return result
+
+
+def model_collapse_sklearn_rates():
+    c_vec_params, model_params = get_params()
+    results = Parallel(n_jobs=-1)(
+        delayed(process_ratio_cv)(1, n, cv, df, c_vec_params, model_params)
+        for n in range(10)
+        for cv in range(5)
+    )
+    results = [item for sublist in results for item in sublist]
+
+    results_df = pd.DataFrame(
+        results, columns=["initial_size", "new_size", "cv", "score", "time"]
+    )
+    results_df.to_csv(
+        "./../results/amazon_reviews_sklearn_collapse_rates.csv", index=False
+    )
 
 
 if __name__ == "__main__":
-    model_collapse_sklearn()
+    df = load_amazon_reviews_dataset()
+    df["text"] = df["text"].str.join(" ")
+    model_collapse_sklearn_rates()
