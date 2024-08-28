@@ -28,6 +28,8 @@ def process_ratio_cv(ratio, cv, df, c_vec_params, model_params):
     y_test = test_df["label"]
     score = model.score(x_test, y_test)
     print(f"Ratio: {ratio} - CV: {cv} - Score: {score} - Took: {training_time:.2f}s")
+    initial_ratio = ratio
+
     return [ratio, cv, score, training_time]
 
 
