@@ -254,7 +254,7 @@ def plot_model_collapse(ax=None):
     ax.legend(
         loc="center left",
         bbox_to_anchor=(1, 0.5),
-        title="No. Samples in Training Data at Collapse Start",
+        title="Collapse Start",
     )
 
     if show:
@@ -299,7 +299,10 @@ def plot_collapse_rates(ax=None):
 
 def plot_collapse_rates_lower(ax=None):
     path = "./../results/amazon_reviews_sklearn_collapse_rates_lower.csv"
+    path2 = "./../results/amazon_reviews_sklearn_collapse_rates_lower_2.csv"
     df = pd.read_csv(path)
+    df2 = pd.read_csv(path2)
+    df = pd.concat([df, df2])
     show = False
     if ax is None:
         _, ax = plt.subplots(figsize=(12, 6))
@@ -310,8 +313,8 @@ def plot_collapse_rates_lower(ax=None):
     dfs = [group for _, group in grouped]
     for df in dfs:
         if (
-            df["colapse_rate"].iloc[0] * 100 % 4 == 0
-            and df["colapse_rate"].iloc[0] <= 0.4
+            df["colapse_rate"].iloc[0] * 100 % 3 == 0
+            and df["colapse_rate"].iloc[0] <= 0.3
         ):
             c = df.groupby("new_size")["score"].agg(["mean"]).reset_index()
             ax.plot(
@@ -336,14 +339,52 @@ def plot_collapse_rates_lower(ax=None):
         plt.show()
 
 
+def plot_collapse_rates_detail(ax=None):
+    path = "./../results/amazon_reviews_sklearn_collapse_rates_lower_2.csv"
+    df = pd.read_csv(path)
+    show = False
+    if ax is None:
+        _, ax = plt.subplots(figsize=(12, 6))
+        show = True
+
+    # split by collapse stage
+    grouped = df.groupby("colapse_rate")
+    dfs = [group for _, group in grouped]
+    for df in dfs:
+        if df["colapse_rate"].iloc[0] < 0.1:
+            c = df.groupby("new_size")["score"].agg(["mean"]).reset_index()
+            ax.plot(
+                c["new_size"],
+                c["mean"],
+                linestyle="-",
+                label=f'{df["colapse_rate"].iloc[0] * 100:.0f}%',
+            )
+
+    ax.set_title("Plotting Model Collapse at different Collapse Rates")
+    ax.set_xlabel("Number of Samples in Training Data")
+    ax.set_ylabel("Mean Score")
+    ax.set_xscale("log")
+    ax.grid(True)
+    ax.legend(
+        loc="center left",
+        bbox_to_anchor=(1, 0.5),
+        title="Collapse Rate",
+    )
+
+    if show:
+        plt.tight_layout()
+        plt.show()
+
+
 if __name__ == "__main__":
     if False:
         pass
     else:
-        fig, axes = plt.subplots(2, 2, figsize=(25, 13))
+        fig, axes = plt.subplots(2, 3, figsize=(25, 13))
         plot_training_data_increase(axes[0][0])
         plot_model_collapse(axes[1][0])
         plot_collapse_rates(axes[0][1])
         plot_collapse_rates_lower(axes[1][1])
+        plot_collapse_rates_detail(axes[0][2])
         plt.tight_layout()
         plt.show()

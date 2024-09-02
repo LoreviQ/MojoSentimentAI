@@ -160,9 +160,8 @@ def process_size_cv(
     trains and tests models repeatedly at varying stages of collapse
     """
     result = []
-    input_df = input_df.sample(n=(max_samples * 5 // 4))
-    test_df = input_df.sample(frac=0.2)
-    train_df = input_df.drop(test_df.index)
+    train_df = input_df.sample(n=max_samples)
+    test_df = input_df.drop(train_df.index)
     collapse_df = CollapseDF(initial_size, increment, train_df, rate)
 
     while collapse_df.expandable:
@@ -174,7 +173,7 @@ def process_size_cv(
         score = score_model(test_df, vectorizer, model)
         result += [[initial_size, current_size, rate, cv, score, training_time]]
         print(
-            f"Initial Size: {initial_size:.0f} - Size: {current_size:.0f} - Collapse Rate: {rate:.1f} - CV: {cv} - Score: {score} - Took: {training_time:.2f}s"
+            f"Initial Size: {initial_size:.0f} - Size: {current_size:.0f} - Collapse Rate: {rate:.2f} - CV: {cv} - Score: {score} - Took: {training_time:.2f}s"
         )
         collapse_df.expand()
     return result
